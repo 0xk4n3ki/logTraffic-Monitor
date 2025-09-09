@@ -43,12 +43,19 @@ INSTALLED_APPS = [
 ]
 
 # RabbitMQ broker URL
-CELERY_BROKER_URL = config('BROKER_URL')
-CELERY_RESULT_BACKEND = 'rpc://'
-CELERY_ACCEPT_CONTENT = ['json']
-CELERY_TASK_SERIALIZER = 'json'
-CELERY_RESULT_SERIALIZER = 'json'
-CELERY_TIMEZONE = 'UTC'
+# CELERY_BROKER_URL = config('BROKER_URL')
+# CELERY_RESULT_BACKEND = 'rpc://'
+# CELERY_ACCEPT_CONTENT = ['json']
+# CELERY_TASK_SERIALIZER = 'json'
+# CELERY_RESULT_SERIALIZER = 'json'
+# CELERY_TIMEZONE = 'UTC'
+
+
+# kafka
+KAFKA_BROKER_URL = config('KAFKA_BROKER_URL', "localhost:9092")
+
+# Elasticsearch
+ELASTICSEARCH_HOST = config('ELASTICSEARCH_HOST', 'http://localhost:9200')
 
 REST_FRAMEWORK= {
     "DEFAULT_AUTHENTICATION_CLASSES": [
@@ -56,6 +63,7 @@ REST_FRAMEWORK= {
     ]
 }
 
+# redis
 CACHES = {
     'default': {
         'BACKEND': 'django_redis.cache.RedisCache',
@@ -98,7 +106,6 @@ TEMPLATES = [
 ]
 
 WSGI_APPLICATION = 'logTraffic_monitor.wsgi.application'
-
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
