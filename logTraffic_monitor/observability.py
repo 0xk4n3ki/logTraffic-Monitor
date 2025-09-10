@@ -55,10 +55,4 @@ DjangoInstrumentor().instrument()
 CeleryInstrumentor().instrument()
 KafkaInstrumentor().instrument()
 
-# logging.basicConfig(
-#     level=logging.INFO,
-#     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-# )
-# logger = logging.getLogger("log-monitor-service")
-
 logger = logging.getLogger('app.logs')

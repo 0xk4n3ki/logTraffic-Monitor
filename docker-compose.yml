@@ -17,6 +17,9 @@ services:
     networks:
       - backend
 
+  postgres:
+    image: postgres:14
+
 networks:
   backend:
     driver: bridge

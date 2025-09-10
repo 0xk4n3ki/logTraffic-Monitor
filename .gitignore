@@ -3,6 +3,3 @@ __pycache__/
 db.sqlite3
 .env
 venv/
-
-README.md
-e.sh
