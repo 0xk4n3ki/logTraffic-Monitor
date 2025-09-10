@@ -27,6 +27,34 @@ It collects logs via REST APIs, buffers with Kafka, persists into PostgreSQL, ap
     ``` bash
     git clone --single-branch -b feature/sigNoz-integration https://github.com/0xk4n3ki/logTraffic-Monitor.git
     cd logTraffic-Monitor
+    ```
+
+    Create a .env file in the project root with the following vvariables:
+    ```ini
+    # Django Settings
+    SECRET_KEY=your_django_secret_key
+
+    # Database (PostgreSQL)
+    DB_NAME=your_db_name
+    DB_USER=your_db_user
+    DB_PASSWORD=your_db_password
+    DB_HOST=localhost
+    DB_PORT=5432
+
+    # Kafka & Redis
+    KAFKA_BROKER_URL=localhost:9092
+    REDIS_URL=redis://127.0.0.1:6379/1
+
+    # OpenTelemetry / SigNoz
+    OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318
+    ```
+
+    Replace values as needed:
+    - SECRET_KEY → generate using python -c "from django.core.management.utils import get_random_secret_key; print(get_random_secret_key())"
+    - DB_* → must match your Postgres container setup
+    - OTEL_EXPORTER_OTLP_ENDPOINT → http://localhost:4318 if you’re running SigNoz locally with Docker
+
+    ```bash
     docker compose up -d
     ```
 
