@@ -13,6 +13,10 @@ def process_log_message(log_data):
     with tracer.start_as_current_span("process_log_message"):
         LogEvent.objects.create(**log_data)
 
-        log_record_data = {k: v for k, v in log_data.items() if k != "message"}
-        logger.info(log_data.get("message", "log_event"), extra=log_record_data) 
-              
+        structured_log = {
+            "log_level": log_data.get("log_level", "INFO"),
+            "log_message": log_data.get("message", "log_event"),
+            "service_name": log_data.get("service_name", "log-monitor-service"),
+            "log_timestamp": log_data["timestamp"],
+        }
+        logger.info(structured_log["log_message"], extra=structured_log)
