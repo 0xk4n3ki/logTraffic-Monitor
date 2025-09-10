@@ -5,11 +5,11 @@ from django.conf import settings
 from logs.utils import process_log_message
 
 class Command(BaseCommand):
-    help = "Run kafka consumer to process log_events"
+    help = "Consume log messages from Kafka and save to DB"
 
     def handle(self, *args, **options):
         consumer = KafkaConsumer(
-            "log_events",
+            'log_events',
             bootstrap_servers=settings.KAFKA_BROKER_URL,
             value_deserializer=lambda x: json.loads(x.decode("utf-8")),
             auto_offset_reset="earliest",
@@ -17,9 +17,13 @@ class Command(BaseCommand):
             group_id="log-consumer-group",
         )
 
-        self.stdout.write(self.style.SUCCESS("Kafka consumer started..."))
+        self.stdout.write(self.style.SUCCESS('Kafka consumer started...'))
 
         for message in consumer:
             log_data = message.value
-            self.stdout.write(self.style.WARNING(f"Received: {log_data}"))
-            process_log_message(log_data)
+            self.stdout.write(f"consumed log: {log_data}")
+
+            try:
+                process_log_message(log_data)
+            except Exception as e:
+                self.stderr.write(f"error processing log: {e}")

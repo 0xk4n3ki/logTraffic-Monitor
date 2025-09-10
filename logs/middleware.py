@@ -3,6 +3,11 @@ from django.http import JsonResponse
 from django.core.cache import cache
 from rest_framework import status
 from .models import APIKey
+from opentelemetry import metrics
+
+meter = metrics.get_meter(__name__)
+requestsTotal = meter.create_counter("rate_limit.request_total")
+blockedTotal = meter.create_counter("rate_limit.blocked_total")
 
 class RateLimitMiddleware:
     def __init__(self, get_response):
@@ -25,8 +30,11 @@ class RateLimitMiddleware:
         current_minute = int(time.time()//60)
         redis_key = f"rate_limit:{api_key}:{current_minute}"
         request_count = cache.get(redis_key, 0)
+
+        requestsTotal.add(1, {"api_key":api_key})
         
         if request_count >= 100:
+            blockedTotal.add(1, {"api_key": api_key})
             return JsonResponse({"error":"Rate limit exceeded"}, status=status.HTTP_429_TOO_MANY_REQUESTS)
         
         cache.set(redis_key, request_count+1, timeout=60)
