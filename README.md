@@ -58,7 +58,7 @@ It collects logs via REST APIs, buffers with Kafka, persists into PostgreSQL, ap
     docker compose up -d
     ```
 
-2. [Install Signoz](https://signoz.io/docs/install/docker/)
+2. [Install SigNoz](https://signoz.io/docs/install/docker/)
 
     ```bash
     git clone -b main https://github.com/SigNoz/signoz.git && cd signoz/deploy/docker
