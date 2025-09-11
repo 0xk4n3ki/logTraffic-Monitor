@@ -142,6 +142,10 @@ SigNoz Logs
 
 <img src="./images/logs.png" alt="logs">
 
-SigNoz Alerts
+SigNoz Traces
 
 <img src="./images/traces.png" alt="traces">
+
+SigNoz Alerts
+
+<img src="./images/alerts.png" alt="alerts">
