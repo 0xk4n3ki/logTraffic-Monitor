@@ -1,4 +1,31 @@
 services:
+  postgres:
+    image: postgres:16
+    container_name: postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: log-monitor
+    ports:
+      - "5432:5432"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    networks:
+      - backend
+
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - "5050:80"
+    networks:
+      - backend
+    depends_on:
+      - postgres
+
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:9.1.3
     container_name: elasticsearch
@@ -9,7 +36,7 @@ services:
     ports:
       - "9200:9200"
     volumes:
-      - es_data:/user/share/elasticsearch/data
+      - es_data:/usr/share/elasticsearch/data
     networks:
       - backend
   
@@ -27,17 +54,6 @@ services:
     networks:
       - backend
 
-  # rabbitmq:
-  #   image: rabbitmq:4-management
-  #   container_name: rabbitmq
-  #   ports:
-  #     - "5672:5672"
-  #     - "15672:15672"
-  #   environment:
-  #     - RABBITMQ_DEFAULT_USER=guest
-  #     - RABBITMQ_DEFAULT_PASS=guest
-  #   networks:
-  #     - backend
 
   redis:
     image: redis
@@ -52,20 +68,95 @@ services:
     container_name: kafka
     ports:
       - "9092:9092"
-      # - "29092:29092"
-    # environment:
-    #   - KAFKA_NODE_ID=1
-    #   - KAFKA_PROCESS_ROLES=broker,controller
-    #   - KAFKA_LISTENERS=PLAINTEXT_HOST://:9092,PLAINTEXT_DOCKER://:29092,CONTROLLER://:9093
-    #   - KAFKA_ADVERTISED_LISTENERS=PLAINTEXT_HOST://localhost:9092,PLAINTEXT_DOCKER://kafka:29092
-    #   - KAFKA_LISTENER_SECURITY_PROTOCOL_MAP=PLAINTEXT_HOST:PLAINTEXT,PLAINTEXT_DOCKER:PLAINTEXT,CONTROLLER:PLAINTEXT
-    #   - KAFKA_CONTROLLER_LISTENER_NAMES=CONTROLLER
-    #   - KAFKA_INTER_BROKER_LISTENER_NAME=PLAINTEXT_DOCKER
-    #   - KAFKA_CONTROLLER_QUORUM_VOTERS=1@kafka:9093
     volumes:
       - kafka_data:/var/lib/kafka/data
     networks:
       - backend
+    healthcheck:
+      test: ["CMD", "nc", "-z", "localhost", "9092"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  prometheus:
+    image: prom/prometheus
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    networks:
+      - backend
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      - redis
+      - kafka
+      - elasticsearch
+
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_USER=ADMIN
+      - GF_SECURITY_ADMIN_PASSWORD=ADMIN
+      - GF_INSTALL_PLUGINS=grafana-piechart-panel
+    networks:
+      - backend
+    depends_on:
+      - prometheus
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning
+
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter
+    container_name: postgres-exporter
+    environment:
+      DATA_SOURCE_NAME: "postgresql://postgres:postgres@postgres:5432/postgres?sslmode=disable"
+    ports:
+      - "9187:9187"
+    networks:
+      - backend
+    depends_on:
+      - postgres
+
+  redis-exporter:
+    image: oliver006/redis_exporter
+    container_name: redis-exporter
+    command: ["--redis.addr=redis:6379"]
+    ports:
+      - "9121:9121"
+    networks:
+      - backend
+    depends_on:
+      - redis
+
+  kafka-exporter:
+    image: danielqsj/kafka-exporter
+    container_name: kafka-exporter
+    command: ["--kafka.server=kafka:9092"]
+    ports:
+      - "9308:9308"
+    networks:
+      - backend
+    depends_on:
+      kafka:
+        condition: service_healthy
+
+  elasticsearch-exporter:
+    image: quay.io/prometheuscommunity/elasticsearch-exporter:latest
+    container_name: elasticsearch-exporter
+    command: ["--es.uri=http://elasticsearch:9200"]
+    ports:
+      - "9114:9114"
+    networks:
+      - backend
+    depends_on:
+      - elasticsearch
 
 networks:
   backend:
@@ -75,3 +166,6 @@ volumes:
   es_data:
   kibana_data:
   kafka_data:
+  pg_data:
+  grafana_data:
+  prometheus_data:

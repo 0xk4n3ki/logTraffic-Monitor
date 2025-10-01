@@ -3,6 +3,12 @@ from kafka import KafkaConsumer
 import json
 from django.conf import settings
 from logs.utils import process_log_message
+from prometheus_client import start_http_server, Counter, Histogram
+
+messages_consumed = Counter("log_messages_total", 
+                            "Total log messages consumed")
+consume_latency = Histogram("log_consume_latency_seconds",
+                            "Log processing time")
 
 class Command(BaseCommand):
     help = "Run kafka consumer to process log_events"
@@ -18,6 +24,8 @@ class Command(BaseCommand):
         )
 
         self.stdout.write(self.style.SUCCESS("Kafka consumer started..."))
+
+        start_http_server(8001)
 
         for message in consumer:
             log_data = message.value

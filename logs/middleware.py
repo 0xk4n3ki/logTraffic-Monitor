@@ -26,7 +26,7 @@ class RateLimitMiddleware:
         redis_key = f"rate_limit:{api_key}:{current_minute}"
         request_count = cache.get(redis_key, 0)
         
-        if request_count >= 100:
+        if request_count >= 600:
             return JsonResponse({"error":"Rate limit exceeded"}, status=status.HTTP_429_TOO_MANY_REQUESTS)
         
         cache.set(redis_key, request_count+1, timeout=60)

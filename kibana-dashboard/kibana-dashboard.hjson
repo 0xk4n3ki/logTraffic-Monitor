@@ -1,0 +1,126 @@
+{
+  $schema: "https://vega.github.io/schema/vega-lite/v5.json"
+  title: {
+    text: "Security Log Monitoring Dashboard"
+    fontSize: 20
+    font: "Inter, sans-serif"
+    color: "#1a1a1a"
+    anchor: "start"
+    offset: 10
+  }
+  
+  data: {
+    url: {
+      %context%: true
+      %timefield%: timestamp
+      index: "logs"
+      body: {
+        aggs: {
+          log_levels: {
+            terms: {
+              field: "log_level.keyword"
+              size: 10
+              order: {_count: "desc"}
+            }
+            aggs: {
+              time_buckets: {
+                date_histogram: {
+                  field: "timestamp"
+                  calendar_interval: "1m"
+                  extended_bounds: {
+                    min: {%timefilter%: "min"}
+                    max: {%timefilter%: "max"}
+                  }
+                  min_doc_count: 0
+                }
+              }
+            }
+          }
+        }
+        size: 0
+      }
+    }
+    format: {property: "aggregations.log_levels.buckets"}
+  }
+  
+  transform: [
+    {flatten: ["time_buckets.buckets"]}
+    {
+      calculate: "datum['time_buckets.buckets'].key"
+      as: "timestamp"
+    }
+    {
+      calculate: "datum['time_buckets.buckets'].doc_count"
+      as: "count"
+    }
+  ]
+  
+  mark: {
+    type: "area"
+    line: {
+      strokeWidth: 2
+    }
+    point: {
+      filled: true
+      size: 50
+    }
+    opacity: 0.7
+    interpolate: "monotone"
+  }
+  
+  encoding: {
+    x: {
+      field: "timestamp"
+      type: "temporal"
+      axis: {
+        title: "Time"
+        titleFontSize: 14
+        titleColor: "#666"
+        labelColor: "#888"
+        gridColor: "#e0e0e0"
+        format: "%H:%M"
+      }
+    }
+    y: {
+      field: "count"
+      type: "quantitative"
+      axis: {
+        title: "Log Count"
+        titleFontSize: 14
+        titleColor: "#666"
+        labelColor: "#888"
+        gridColor: "#e0e0e0"
+      }
+      stack: true
+    }
+    color: {
+      field: "key"
+      type: "nominal"
+      scale: {
+        domain: ["CRITICAL", "ERROR", "WARNING", "INFO", "DEBUG"]
+        range: ["#dc2626", "#ea580c", "#f59e0b", "#3b82f6", "#8b5cf6"]
+      }
+      legend: {
+        title: "Log Level"
+        titleFontSize: 14
+        titleColor: "#666"
+        labelFontSize: 12
+        labelColor: "#888"
+        orient: "right"
+        offset: 20
+      }
+    }
+    tooltip: [
+      {field: "key", type: "nominal", title: "Log Level"}
+      {field: "count", type: "quantitative", title: "Count"}
+      {field: "timestamp", type: "temporal", title: "Time", format: "%Y-%m-%d %H:%M:%S"}
+    ]
+  }
+  
+  config: {
+    view: {
+      strokeWidth: 0
+    }
+    background: "#ffffff"
+  }
+}
